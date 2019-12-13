@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-
 namespace ToolGood.CodeAuthor.Datas
 {
     public class CodeAuthorInfo
     {
         public Dictionary<string, CodeNamespaceInfo> NamespaceInfos { get; set; }
-
         public class CodeNamespaceInfo
         {
             public Dictionary<string, CodeClassInfo> ClassInfos { get; set; }
@@ -23,11 +21,8 @@ namespace ToolGood.CodeAuthor.Datas
         public class CodeAuthor
         {
             public string Author { get; set; }
-
             public DateTime CommitTime { get; set; }
         }
-
-
 
         public List<CodeAuthor> GetCodeAuthor(string namespaceName,string className,string methodName)
         {
@@ -41,5 +36,4 @@ namespace ToolGood.CodeAuthor.Datas
             return new List<CodeAuthor>();
         }
     }
-
 }

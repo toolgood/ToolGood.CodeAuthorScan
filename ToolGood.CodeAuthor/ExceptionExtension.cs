@@ -6,13 +6,11 @@ using ToolGood.CodeAuthor.Datas;
 using System.Diagnostics;
 using System.Reflection;
 using System.Linq;
-
 namespace ToolGood.CodeAuthor
 {
     public static class ExceptionExtension
     {
         private static CodeAuthorInfo CodeAuthor = new CodeAuthorInfo();
-
         public static string GetCodeAuthor(this Exception ex)
         {
             StringBuilder builder = new StringBuilder();
@@ -23,7 +21,6 @@ namespace ToolGood.CodeAuthor
                     e = e.InnerException;
                     list.Add(e);
                 }
-
                 foreach (var item in list) {
                     var type = item.TargetSite.DeclaringType;
                     builder.Append($"{type.Namespace}.{type.Name}.{item.TargetSite.Name}:");
@@ -35,9 +32,7 @@ namespace ToolGood.CodeAuthor
                     builder.Append("\r\n");
                 }
             }
-
  
-
             StackTrace stackTrace = new StackTrace(true);
             var frameList = stackTrace.GetFrames();
             foreach (var item in frameList) {
@@ -45,7 +40,6 @@ namespace ToolGood.CodeAuthor
                 if (method == null) { continue; }
                 var type = method.DeclaringType;
                 if (type == null) { continue; }
-
                 var authors = CodeAuthor.GetCodeAuthor(type.Namespace, type.Name, method.Name);
                 if (authors.Count > 0) {
                     builder.Append($"{type.Namespace}.{type.Name}.{method.Name}:");
