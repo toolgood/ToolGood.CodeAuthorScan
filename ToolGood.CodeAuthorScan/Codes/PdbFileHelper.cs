@@ -6,6 +6,9 @@ using System.Text;
 using ToolGood.CodeAuthorScan.Datas;
 using System.Linq;
 using SharpPdb.Managed;
+using Microsoft.DiaSymReader.Tools;
+
+
 namespace ToolGood.CodeAuthorScan.Codes
 {
     public class PdbFileHelper
@@ -22,14 +25,47 @@ namespace ToolGood.CodeAuthorScan.Codes
             //Microsoft.DiaSymReader.PortablePdb.SymBinder 
 
             var reader = SharpPdb.Managed.PdbFileReader.OpenPdb(file);
-            var funcs = reader.Functions;
-            if (funcs.Count > 0) {
-                var sps = funcs[0].SequencePoints;
-                GetPdbInfos(infos, sps);
+            var pr = reader as SharpPdb.Managed.Windows.PdbFile;
+            if (pr != null) {
+                var funcs = reader.Functions;
+                if (funcs.Count > 0) {
+                    var sps = funcs[0].SequencePoints;
+                    GetPdbInfos(infos, sps);
+                }
+            } else {
+                var dllFile = file.Replace(".pdb", ".dll");
+                if (File.Exists(dllFile)) {
+                    var pe = File.OpenRead(dllFile);
+                    var fs = File.OpenRead(file);
+                    using (var ms = new MemoryStream()) {
+                        PdbConverter.Default.ConvertPortableToWindows(pe, fs, ms);
+                        var bytes = ms.ToArray();
+                        File.WriteAllBytes(file + "2", bytes);
+                    }
+                    reader = SharpPdb.Managed.PdbFileReader.OpenPdb(file + "2");
+                    pr = reader as SharpPdb.Managed.Windows.PdbFile;
+                    if (pr != null) {
+                        var funcs = reader.Functions;
+                        if (funcs.Count > 0) {
+                            var sps = funcs[0].SequencePoints;
+                            GetPdbInfos(infos, sps);
+                        }
+                    }
+                }
+
             }
+
+            //var funcs = reader.Functions;
+            //if (funcs.Count > 0) {
+            //    var sps = funcs[0].SequencePoints;
+            //    GetPdbInfos(infos, sps);
+            //}
 
             return infos;
         }
+
+
+
         private static void GetPdbInfos(List<PdbFileInfo> infos, IReadOnlyList<SharpPdb.Managed.IPdbSequencePoint> sequencePoints)
         {
             foreach (IPdbSequencePoint sp in sequencePoints) {
@@ -49,7 +85,9 @@ namespace ToolGood.CodeAuthorScan.Codes
                 } else {
                     SharpPdb.Managed.Portable.PdbSequencePoint psp2 = sp as SharpPdb.Managed.Portable.PdbSequencePoint;
                     var file = psp2.Source.Name;
-                  var md=  psp2.Function.MethodDebugInformation;
+                    var md = psp2.Function.MethodDebugInformation;
+                    var t = psp2.Function.LocalScopes[0].Constants[0].Name;
+                    //psp2.Function.LocalScopes[0].Constants[0].Name;
                     //var file = psp2.Function.DbiModule.Files[0];
                     //var cname = psp2.Function.DbiModule.ModuleName.String;
                     //var @namespace = cname.Substring(0, cname.LastIndexOf('.'));

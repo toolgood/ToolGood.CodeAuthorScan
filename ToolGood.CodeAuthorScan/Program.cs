@@ -4,6 +4,7 @@ using System.IO;
 using ToolGood.CodeAuthorScan.Codes;
 using ToolGood.CodeAuthorScan.Datas;
 using Newtonsoft.Json;
+
 namespace ToolGood.CodeAuthorScan
 {
     class Program
