@@ -7,7 +7,8 @@ using ToolGood.CodeAuthorScan.Datas;
 using System.Linq;
 using SharpPdb.Managed;
 using Microsoft.DiaSymReader.Tools;
-
+using System.Reflection.PortableExecutable;
+using System.Xml;
 
 namespace ToolGood.CodeAuthorScan.Codes
 {
@@ -33,24 +34,38 @@ namespace ToolGood.CodeAuthorScan.Codes
                     GetPdbInfos(infos, sps);
                 }
             } else {
-                var dllFile = file.Replace(".pdb", ".dll");
+                var dllFile = Path.ChangeExtension(file, ".dll");
                 if (File.Exists(dllFile)) {
-                    var pe = File.OpenRead(dllFile);
-                    var fs = File.OpenRead(file);
-                    using (var ms = new MemoryStream()) {
-                        PdbConverter.Default.ConvertPortableToWindows(pe, fs, ms);
-                        var bytes = ms.ToArray();
-                        File.WriteAllBytes(file + "2", bytes);
+                    using (var peStream = new FileStream(dllFile, FileMode.Open, FileAccess.Read))
+                    using (var pdbStream = new FileStream(file, FileMode.Open, FileAccess.Read))
+                    using (var dstFileStream = new FileStream(file + ".xml", FileMode.Create, FileAccess.ReadWrite))
+                    using (var sw = new StreamWriter(dstFileStream, Encoding.UTF8)) {
+                        PdbToXmlConverter.ToXml(sw, pdbStream, peStream);
                     }
-                    reader = SharpPdb.Managed.PdbFileReader.OpenPdb(file + "2");
-                    pr = reader as SharpPdb.Managed.Windows.PdbFile;
-                    if (pr != null) {
-                        var funcs = reader.Functions;
-                        if (funcs.Count > 0) {
-                            var sps = funcs[0].SequencePoints;
-                            GetPdbInfos(infos, sps);
-                        }
-                    }
+                    GetPdbInfo(infos, file + ".xml");
+
+
+                    //var pdbStream = File.OpenRead(file);
+                    //using (var peStream = new FileStream(dllFile, FileMode.Open, FileAccess.Read))
+                    //using (var peReader = new PEReader(peStream, PEStreamOptions.LeaveOpen)) {
+                    //    using (var ms = new MemoryStream()) {
+                    //        PdbToXmlConverter.ToXml(ms, pdbStream, peStream);
+
+                    //        PdbToXmlConverter.ToXml(fs, peStream)
+                    //        PdbConverter.Default.ConvertPortableToWindows(peStream, fs, ms);
+                    //        var bytes = ms.ToArray();
+                    //        File.WriteAllBytes(file + "2", bytes);
+                    //    }
+                    //}
+                    //reader = SharpPdb.Managed.PdbFileReader.OpenPdb(file + "2");
+                    //pr = reader as SharpPdb.Managed.Windows.PdbFile;
+                    //if (pr != null) {
+                    //    var funcs = reader.Functions;
+                    //    if (funcs.Count > 0) {
+                    //        var sps = funcs[0].SequencePoints;
+                    //        GetPdbInfos(infos, sps);
+                    //    }
+                    //}
                 }
 
             }
@@ -63,6 +78,57 @@ namespace ToolGood.CodeAuthorScan.Codes
 
             return infos;
         }
+        private static void ConvertPdbToXml(string dllFile, string file)
+        {
+            var fs = File.OpenRead(file);
+            using (var peStream = new FileStream(dllFile, FileMode.Open, FileAccess.Read))
+            using (var peReader = new PEReader(peStream, PEStreamOptions.LeaveOpen)) {
+                using (var ms = new MemoryStream()) {
+                    PdbConverter.Default.ConvertPortableToWindows(peStream, fs, ms);
+                    var bytes = ms.ToArray();
+                    File.WriteAllBytes(file + ".xml", bytes);
+                }
+            }
+        }
+
+        private static void GetPdbInfo(List<PdbFileInfo> infos, string xmlFile)
+        {
+            var xml = File.ReadAllText(xmlFile);
+            XmlDocument xmlDocument = new System.Xml.XmlDocument();
+            xmlDocument.LoadXml(xml);
+
+            var fileNodes = xmlDocument.SelectNodes("/symbols/files/file");
+            Dictionary<string, string> srcFiles = new Dictionary<string, string>();
+            foreach (XmlNode node in fileNodes) {
+                var key = node.Attributes["id"].Value;
+                var value = node.Attributes["name"].Value;
+                srcFiles[key] = value;
+            }
+            var methodNodes = xmlDocument.SelectNodes("/symbols/methods/method");
+            foreach (XmlNode node in methodNodes) {
+                var cname = node.Attributes["containingType"].Value;
+                var @namespace = cname.Substring(0, cname.LastIndexOf('.'));
+                var className = cname.Substring(cname.LastIndexOf('.') + 1);
+                var mname = node.Attributes["name"].Value;
+
+                var entrys = node.SelectNodes("/sequencePoints/entry");
+                int startLine = int.MaxValue;
+                int endLine = 0;
+                var file = "";
+                foreach (XmlNode entry in entrys) {
+                    if (entry.Attributes["hidden"].Value == "true") {
+                        var fileId = entry.Attributes["document"].Value;
+                        file = srcFiles[fileId];
+                        var sl = int.Parse(entry.Attributes["startLine"].Value);
+                        var el = int.Parse(entry.Attributes["endColumn"].Value);
+                        if (startLine < sl) { startLine = sl; }
+                        if (endLine > el) { endLine = el; }
+                    }
+                }
+                GetPdbInfos(infos, file, @namespace, className, mname, startLine, endLine);
+            }
+        }
+
 
 
 
@@ -75,30 +141,16 @@ namespace ToolGood.CodeAuthorScan.Codes
                 var startLine = sp.StartLine;
                 var endLine = sp.EndLine;
                 SharpPdb.Managed.Windows.PdbSequencePoint psp = sp as SharpPdb.Managed.Windows.PdbSequencePoint;
-                if (psp != null) {
-                    var file = psp.Function.DbiModule.Files[0];
-                    var cname = psp.Function.DbiModule.ModuleName.String;
-                    var @namespace = cname.Substring(0, cname.LastIndexOf('.'));
-                    var className = cname.Substring(cname.LastIndexOf('.') + 1);
-                    var mname = psp.Function.Procedure.Name.String;
-                    NewMethod(infos, file, @namespace, className, mname, startLine, endLine);
-                } else {
-                    SharpPdb.Managed.Portable.PdbSequencePoint psp2 = sp as SharpPdb.Managed.Portable.PdbSequencePoint;
-                    var file = psp2.Source.Name;
-                    var md = psp2.Function.MethodDebugInformation;
-                    var t = psp2.Function.LocalScopes[0].Constants[0].Name;
-                    //psp2.Function.LocalScopes[0].Constants[0].Name;
-                    //var file = psp2.Function.DbiModule.Files[0];
-                    //var cname = psp2.Function.DbiModule.ModuleName.String;
-                    //var @namespace = cname.Substring(0, cname.LastIndexOf('.'));
-                    //var className = cname.Substring(cname.LastIndexOf('.') + 1);
-                    //var mname = psp2.Function.Procedure.Name.String;
-                    //NewMethod(infos, file, @namespace, className, mname, startLine, endLine);
-                }
-
+                var file = psp.Function.DbiModule.Files[0];
+                var cname = psp.Function.DbiModule.ModuleName.String;
+                var @namespace = cname.Substring(0, cname.LastIndexOf('.'));
+                var className = cname.Substring(cname.LastIndexOf('.') + 1);
+                var mname = psp.Function.Procedure.Name.String;
+                GetPdbInfos(infos, file, @namespace, className, mname, startLine, endLine);
             }
         }
-        private static void NewMethod(List<PdbFileInfo> infos, string file, string @namespace, string className, string mname, int startLine, int endLine)
+
+        private static void GetPdbInfos(List<PdbFileInfo> infos, string file, string @namespace, string className, string mname, int startLine, int endLine)
         {
             var uqname = $"{file}.{@namespace}.{className}.{mname}";
             var info = infos.Where(q => q.GetFullName() == uqname).FirstOrDefault();
@@ -121,6 +173,7 @@ namespace ToolGood.CodeAuthorScan.Codes
                 }
             }
         }
+
         public static List<string> GetFiles(List<PdbFileInfo> infos)
         {
             return infos.Select(q => q.File).Distinct().ToList();
