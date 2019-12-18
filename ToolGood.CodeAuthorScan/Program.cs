@@ -25,11 +25,13 @@ namespace ToolGood.CodeAuthorScan
                     var ifs = GitFileHelper.GetFileInfo(gitFolder, file);
                     gitInfos.AddRange(ifs);
                 }
+
                 CodeAuthorInfo authorInfo = new CodeAuthorInfo();
                 foreach (var pdbInfo in pdbFileInfos) {
                     CodeAuthorHelper.BuildCodeAuthor(authorInfo, pdbInfo, gitInfos);
                 }
                 var outFile = CodeAuthorHelper.GetOutFile(pdbFile);
+
                 File.WriteAllText(outFile, JsonConvert.SerializeObject(authorInfo));
             }
         }

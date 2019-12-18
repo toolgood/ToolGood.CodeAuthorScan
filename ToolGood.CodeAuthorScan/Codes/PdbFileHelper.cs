@@ -40,7 +40,7 @@ namespace ToolGood.CodeAuthorScan.Codes
             using (var pdbStream = new FileStream(pdbPath, FileMode.Open, FileAccess.Read))
             using (var ms = new MemoryStream())
             using (var sw = new StreamWriter(ms, Encoding.UTF8)) {
-                PdbToXmlConverter.ToXml(sw, pdbStream, peStream, PdbToXmlOptions.ResolveTokens | PdbToXmlOptions.IncludeTokens | PdbToXmlOptions.UseNativeReader);
+                PdbToXmlConverter.ToXml(sw, pdbStream, peStream, PdbToXmlOptions.ResolveTokens | PdbToXmlOptions.IncludeTokens);
                 return Encoding.UTF8.GetString(ms.ToArray());
             }
         }
