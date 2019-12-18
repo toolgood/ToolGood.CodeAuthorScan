@@ -12,6 +12,7 @@ namespace ToolGood.CodeAuthorScan.Codes
         {
             var path = Path.Combine(filePath, ".git");
             if (Directory.Exists(path)) {
+                Console.WriteLine($"获取git文件夹：{filePath} ");
                 return filePath;
             }
             if (filePath.EndsWith(":\\")) {
@@ -23,27 +24,31 @@ namespace ToolGood.CodeAuthorScan.Codes
         public static List<GitFileInfo> GetFileInfo(string repositoryFolder, string file)
         {
             List<GitFileInfo> infos = new List<GitFileInfo>();
-            var repository = new LibGit2Sharp.Repository(repositoryFolder);
-            if (repositoryFolder.StartsWith("\\")==false) {
+            var repository = new Repository(repositoryFolder);
+            if (repositoryFolder.StartsWith("\\") == false) {
                 repositoryFolder = repositoryFolder + "\\";
             }
-            var rFile = file.Replace(repositoryFolder, "").Replace("\\","/");
-            var t = repository.Blame(rFile);
-            foreach (var item in t) {
-                GitFileInfo info = new GitFileInfo() {
-                    File = file,
-                    Line = item.FinalStartLineNumber,
-                    Author = item.FinalCommit.Author.Name,
-                    CommitTime = item.FinalCommit.Author.When.DateTime
-                };
-                infos.Add(info);
-            }
+            var rFile = file.Replace(repositoryFolder, "").Replace("\\", "/");
+            try {
+                var t = repository.Blame(rFile);
+                Console.WriteLine($"获取文件上传信息：{file} ");
+
+                foreach (var item in t) {
+                    GitFileInfo info = new GitFileInfo() {
+                        File = file,
+                        Line = item.FinalStartLineNumber,
+                        Author = item.FinalCommit.Author.Name,
+                        CommitTime = item.FinalCommit.Author.When.DateTime
+                    };
+                    infos.Add(info);
+                }
+            } catch (Exception) { }
             return infos;
         }
         public static List<GitFileInfo> GetFileInfo(string RepositoryFolder, string file, int startLine, int endLine)
         {
             List<GitFileInfo> infos = new List<GitFileInfo>();
-            var repository = new LibGit2Sharp.Repository(RepositoryFolder);
+            var repository = new Repository(RepositoryFolder);
             var t = repository.Blame(file, new BlameOptions() { MinLine = startLine + 1, MaxLine = endLine + 1 });
             foreach (var item in t) {
                 GitFileInfo info = new GitFileInfo() {

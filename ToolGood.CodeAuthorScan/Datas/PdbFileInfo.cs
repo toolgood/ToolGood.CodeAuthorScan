@@ -16,5 +16,11 @@ namespace ToolGood.CodeAuthorScan.Datas
         {
             return $"{File}.{Namespace}.{Class}.{Method}";
         }
+
+
+        public override string ToString()
+        {
+            return $"{Namespace}.{Class}.{Method}[{LineStart},{LineEnd}]";
+        }
     }
 }
