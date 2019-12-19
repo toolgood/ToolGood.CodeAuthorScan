@@ -38,17 +38,17 @@ namespace ToolGood.CodeAuthorScan
                     if (authorInfo.HasFile(file)) { continue; }
                     authorInfo.AddFile(file);
                 }
-                System.Threading.Tasks.Parallel.ForEach(files, file => {
+                //System.Threading.Tasks.Parallel.ForEach(files, file => {
+                //    List<GitFileInfo> gitInfos = new List<GitFileInfo>();
+                //    var ifs = GitFileHelper.GetFileInfo(gitFolder, file);
+                //    authorInfo.AddGitUpdate(file, ifs);
+                //});
+
+                foreach (var file in files) {
                     List<GitFileInfo> gitInfos = new List<GitFileInfo>();
                     var ifs = GitFileHelper.GetFileInfo(gitFolder, file);
                     authorInfo.AddGitUpdate(file, ifs);
-                });
-
-                //foreach (var file in files) {
-                //     List<GitFileInfo> gitInfos = new List<GitFileInfo>();
-                //    var ifs = GitFileHelper.GetFileInfo(gitFolder, file);
-                //    authorInfo.AddGitUpdate(file, ifs);
-                //}
+                }
 
                 foreach (var pdbFileInfo in pdbFileInfos) {
                     authorInfo.AddMethod(pdbFileInfo.Namespace, pdbFileInfo.Class, pdbFileInfo.Method

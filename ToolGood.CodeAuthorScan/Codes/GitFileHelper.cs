@@ -30,7 +30,8 @@ namespace ToolGood.CodeAuthorScan.Codes
             }
             var rFile = file.Replace(repositoryFolder, "").Replace("\\", "/");
             try {
-                var t = repository.Blame(rFile);
+                var t = repository.Blame(rFile,new BlameOptions { StartingAt = repository.Head });
+                //var t2 = repository.Blame(rFile);
                 Console.WriteLine($"获取文件上传信息：{file} ");
 
                 foreach (var item in t) {

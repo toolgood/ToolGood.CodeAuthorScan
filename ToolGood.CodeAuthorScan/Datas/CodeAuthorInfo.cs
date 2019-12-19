@@ -62,6 +62,7 @@ namespace ToolGood.CodeAuthorScan.Datas
                 if (lastInfo == null || lastInfo.Author != gitFile.Author) {
                     lastInfo = new GitUpdateInfo();
                     GitUpdates.Add(lastInfo);
+                    lastInfo.FileId = fileId;
                     lastInfo.UpdateId = GitUpdates.Count + 1;
                     lastInfo.Author = gitFile.Author;
                     lastInfo.CommitTime = gitFile.CommitTime;
