@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ToolGood.CodeAuthorScan": {
+      "commandName": "Project",
+      "commandLineArgs": "F:\\git\\ToolGood.ReadyGo.master\\ToolGood.ReadyGo3\\bin\\Debug\\netstandard2.0"
+    }
+  }
+}
