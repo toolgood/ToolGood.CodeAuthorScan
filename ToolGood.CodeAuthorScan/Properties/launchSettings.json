@@ -2,7 +2,7 @@
   "profiles": {
     "ToolGood.CodeAuthorScan": {
       "commandName": "Project",
-      "commandLineArgs": "D:\\git\\NGit\\NGit\\bin\\Debug\\netstandard2.0"
+      "commandLineArgs": "D:\\git\\ToolGood.CodeAuthorScan\\NGit\\bin\\Debug\\netstandard2.0"
     }
   }
 }
