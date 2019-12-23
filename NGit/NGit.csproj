@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
+    <Copyright>NGit</Copyright>
+    <Product>NGit.Port</Product>
+    <PackageId>NGit.Port</PackageId>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageProjectUrl>https://github.com/TetradogOther/ngit/tree/netstandard2.0</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/TetradogOther/ngit/tree/netstandard2.0</RepositoryUrl>
+    <Description>a simple port to .netstandard2.0</Description>
+    <PackageReleaseNotes></PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="NGit\resources\JGitText.properties" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="NGit\resources\JGitText.properties" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SharpZipLib.Port" Version="1.0.0" />
+    <PackageReference Include="NSch.Port" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sharpen\Sharpen.csproj" />
+  </ItemGroup>
+
+</Project>
