@@ -5,6 +5,8 @@ using ToolGood.CodeAuthorScan.Codes;
 using ToolGood.CodeAuthorScan.Datas;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
+using NGit.Api;
+using NGit.Diff;
 
 namespace ToolGood.CodeAuthorScan
 {
@@ -12,12 +14,21 @@ namespace ToolGood.CodeAuthorScan
     {
         static void Main(string[] args)
         {
+            //var git = Git.Init().SetDirectory(@"D:\git\NGit").Call();
+            //string relativePath = "README.md";
+            //var blameHunks = git.Blame().SetFilePath(relativePath).SetTextComparator(RawTextComparator.WS_IGNORE_ALL).Call();
+            //blameHunks.ComputeAll();
+            //var author = blameHunks.GetSourceAuthor(0);
+            //var firstLineCommit = blameHunks.GetSourceCommit(0);
+            //Console.ReadKey();
+
+
             var path = string.Join(" ", args);
             if (string.IsNullOrWhiteSpace(path)) {
                 path = Directory.GetCurrentDirectory();
             }
             var pdbFiles = PdbFileHelper.GetPdbFiles(path);
-            var gitFolder = GitFileHelper.GetFolderPath(path);
+            //var gitFolder = GitFileHelper.GetFolderPath(path);
 
             CodeAuthorInfo authorInfo = new CodeAuthorInfo();
             foreach (var pdbFile in pdbFiles) {
@@ -46,7 +57,7 @@ namespace ToolGood.CodeAuthorScan
 
                 foreach (var file in files) {
                     List<GitFileInfo> gitInfos = new List<GitFileInfo>();
-                    var ifs = GitFileHelper.GetFileInfo(gitFolder, file);
+                    var ifs = GitFileHelper.GetFileInfo(file);
                     authorInfo.AddGitUpdate(file, ifs);
                 }
 
