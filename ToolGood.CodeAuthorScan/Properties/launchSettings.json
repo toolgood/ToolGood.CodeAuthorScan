@@ -2,7 +2,7 @@
   "profiles": {
     "ToolGood.CodeAuthorScan": {
       "commandName": "Project",
-      "commandLineArgs": "D:\\git\\ToolGood.CodeAuthorScan\\NGit\\bin\\Debug\\netstandard2.0"
+      "commandLineArgs": "-out=\"a.json\""
     }
   }
 }

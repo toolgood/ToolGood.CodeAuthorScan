@@ -1,59 +1,64 @@
-﻿using System;
+﻿using NDesk.Options;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using ToolGood.CodeAuthorScan.Codes;
 using ToolGood.CodeAuthorScan.Datas;
-using Newtonsoft.Json;
-using System.Threading.Tasks;
-using NGit.Api;
-using NGit.Diff;
 
 namespace ToolGood.CodeAuthorScan
 {
     class Program
     {
+        public class Options
+        {
+            public bool IsRunned;
+            public string FolderPath;
+            public string OutputFilePath = "CodeAuthor.json";
+            public List<String> Arguments = new List<string>();
+        }
+        private static OptionSet optionSet;
+        private static Options options = new Options();
+
         static void Main(string[] args)
         {
-            //var git = Git.Init().SetDirectory(@"D:\git\NGit").Call();
-            //string relativePath = "README.md";
-            //var blameHunks = git.Blame().SetFilePath(relativePath).SetTextComparator(RawTextComparator.WS_IGNORE_ALL).Call();
-            //blameHunks.ComputeAll();
-            //var author = blameHunks.GetSourceAuthor(0);
-            //var firstLineCommit = blameHunks.GetSourceCommit(0);
-            //Console.ReadKey();
-
-
-            var path = string.Join(" ", args);
-            if (string.IsNullOrWhiteSpace(path)) {
-                path = Directory.GetCurrentDirectory();
+            optionSet = new OptionSet()
+            {
+                { "folder|f=", "必填，指定pdb所在文档",v=>{options.FolderPath=v;  } },
+                { "out|o=", "输出文件名，默认“CodeAuthor.json”",v=>{ options.OutputFilePath =v; } },
+                { "help|?|h", "显示帮助文档", v => {ShowHelp();options.IsRunned=true; } },
+                { "version|v", "显示版本号", v => {ShowVersion();options.IsRunned=true; } },
+            };
+            if (args == null || args.Length == 0) { ShowHelp(); return; }
+            try {
+                options.Arguments = optionSet.Parse(args);
+                if (options.IsRunned==false) {
+                    if (options.FolderPath==null) {
+                        ShowHelp();
+                    } else {
+                        Analysis();
+                    }
+                }
+            } catch (OptionException err) {
+                Console.Error.WriteLine("fatal: " + err.Message);
             }
+        }
+
+        private static void Analysis()
+        {
+            var path = options.FolderPath;
             var pdbFiles = PdbFileHelper.GetPdbFiles(path);
-            //var gitFolder = GitFileHelper.GetFolderPath(path);
 
             CodeAuthorInfo authorInfo = new CodeAuthorInfo();
             foreach (var pdbFile in pdbFiles) {
                 var pdbFileInfos = PdbFileHelper.GetPdbInfos(pdbFile);
-
-                //foreach (var pdbFileInfo in pdbFileInfos) {
-                //    if (authorInfo.HasFile(pdbFileInfo.File) ==false) {
-                //        authorInfo.AddFile(pdbFileInfo.File);
-                //    }
-                //    List<GitFileInfo> gitInfos = new List<GitFileInfo>();
-                //    var ifs = GitFileHelper.GetFileInfo(gitFolder, pdbFileInfo.File,pdbFileInfo.LineStart,pdbFileInfo.LineEnd);
-                //    authorInfo.AddGitUpdate(pdbFileInfo.File, ifs);
-                //}
-
 
                 var files = PdbFileHelper.GetFiles(pdbFileInfos);
                 foreach (var file in files) {
                     if (authorInfo.HasFile(file)) { continue; }
                     authorInfo.AddFile(file);
                 }
-                //System.Threading.Tasks.Parallel.ForEach(files, file => {
-                //    List<GitFileInfo> gitInfos = new List<GitFileInfo>();
-                //    var ifs = GitFileHelper.GetFileInfo(gitFolder, file);
-                //    authorInfo.AddGitUpdate(file, ifs);
-                //});
 
                 foreach (var file in files) {
                     List<GitFileInfo> gitInfos = new List<GitFileInfo>();
@@ -66,24 +71,22 @@ namespace ToolGood.CodeAuthorScan
                             , pdbFileInfo.File, pdbFileInfo.LineStart, pdbFileInfo.LineEnd);
                 }
 
-                //List<GitFileInfo> gitInfos = new List<GitFileInfo>();
-                //foreach (var file in files) {
-                //    var ifs = GitFileHelper.GetFileInfo(gitFolder, file);
-                //    gitInfos.AddRange(ifs);
-                //}
-
-                //CodeAuthorInfo authorInfo = new CodeAuthorInfo();
-                //foreach (var pdbInfo in pdbFileInfos) {
-                //    CodeAuthorHelper.BuildCodeAuthor(authorInfo, pdbInfo, gitInfos);
-                //}
-                //var outFile = CodeAuthorHelper.GetOutFile(pdbFile);
-
-                //File.WriteAllText(outFile, JsonConvert.SerializeObject(authorInfo));
             }
-            File.WriteAllText("1.json", JsonConvert.SerializeObject(authorInfo));
-
+            File.WriteAllText(options.OutputFilePath, JsonConvert.SerializeObject(authorInfo));
         }
 
+
+        private static void ShowHelp()
+        {
+            Console.Write("usage: CodeAuthorScan ");
+            Console.WriteLine(string.Join(" ", optionSet.Select(o => "[--" + string.Join("|-", o.Names) + "]").ToArray()));
+            optionSet.WriteOptionDescriptions(Console.Out);
+            Console.WriteLine();
+        }
+        private static void ShowVersion()
+        {
+            Console.WriteLine("version:1.0.0.0");
+        }
 
     }
 }
